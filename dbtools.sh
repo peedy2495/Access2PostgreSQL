@@ -2,8 +2,7 @@
 
 #dbtools written by Peter Mark
 
-path=$1
-delim=';'                                   #define column-delimiter within .csv-files, here
+delim=','                                   #define column-delimiter within .csv-files, here
 
 function conv_chars () {
   pattern="$path/*.csv"                     #search pattern for .csv-files
@@ -105,7 +104,11 @@ function fix_cols () {
         fi
       done
       diff=$(( ncols-ndelim-1 ))              #deviant number of columns to headline
-      echo "Line $linenum column difference: $diff"
+      if [[ $diff -ne  0 ]];then
+        echo "Line $linenum column difference: $diff - column number missmatchm ... fixing!"
+      else
+        echo "Line $linenum column difference: $diff - OK"
+      fi
       while [ $diff -gt 0 ]; do               #append deviant columns
         line=$line$delim
         ((diff--))
