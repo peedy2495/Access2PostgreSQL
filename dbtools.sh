@@ -3,7 +3,7 @@
 #dbtools written by Peter Mark
 
 path=$1
-delim=','                                   #define column-delimiter within .csv-files, here
+delim=';'                                   #define column-delimiter within .csv-files, here
 
 function conv_chars () {
   pattern="$path/*.csv"                     #search pattern for .csv-files
@@ -166,7 +166,7 @@ while [ -n "$1" ]; do                         #argument processing without need 
       ;;
     *)
       echo "Wrong argument: $1 !"
-      echo $"Usage: $0 {src=[path]|charconv|mksql|pgimport}"
+      echo $"Usage: $0 {src=[path]|charconv|fixcols|mksql|pgimport}"
       exit 1
     esac
   shift
