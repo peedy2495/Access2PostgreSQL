@@ -2,7 +2,7 @@
 
 #dbtools written by Peter Mark
 
-delim=','                                   #define column-delimiter within .csv-files, here
+delim=';'                                   #define column-delimiter within .csv-files, here
 
 function conv_chars () {
   pattern="$path/*.csv"                     #search pattern for .csv-files
@@ -71,8 +71,8 @@ function gen_sql () {
           esac
         done
       done
-      head -c -2 $sqlfile > "$sqlfile.tmp"
-      mv "$sqlfile.tmp" $sqlfile
+      head -c -2 $sqlfile > "$sqlfile.tmp"    #remove last two characters (comma and newline)->end of column definitions
+      mv "$sqlfile.tmp" $sqlfile              #make temp-file real :-)
       echo -e "\n)\n\nWITH (\n\tOIDS = FALSE\n);\n\nALTER TABLE $schema.\"$tablename\"\n\tOWNER to postgres;" >> $sqlfile
       IFS=$ofis                               #restore original IFS
   done
@@ -84,7 +84,7 @@ function fix_cols () {
   for file in $pattern; do                    #process every mod_*.csv file in given path
     lines=$(wc -l $file|awk -F ' ' '{print $1}')
     cols=$(head -n1 $file)
-    ncols=$(echo $cols | sed "s/[^,]//g" | wc -c)
+    ncols=$(echo $cols | sed "s/[^$delim]//g" | wc -c)
     echo "Table $(basename $file) has $ncols colunms and $lines lines"
     echo "checking consistency ..."
     echo "" > $path/data_$(basename $file)    #create or overwrite to empty File
@@ -130,9 +130,9 @@ function pg_import () {
   read user
   echo -n "Pasword: "
   read pass
-  pattern="$path/mod_*.sql"                   #search pattern for translated files (utf-8)
+  pattern="$path/mod_*.sql"                   #search pattern for generated sql-files
   line="1"
-  for file in $pattern; do                    #process every mod_*.csv file in given path
+  for file in $pattern; do                    #process every mod_*.sql file in given path
     echo "importing $file ..."
     PGPASSWORD=$pass psql -h $host -d $db -U $user -p 5432 -a -q -f $file
   done
