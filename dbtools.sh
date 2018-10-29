@@ -79,6 +79,7 @@ function gen_sql () {
 }
 
 function fix_cols () {
+  echo "fixing column number missmatches:"
   pattern="$path/mod_*.csv"                   #search pattern for translated files (utf-8)
   line="1"
   for file in $pattern; do                    #process every mod_*.csv file in given path
@@ -86,7 +87,7 @@ function fix_cols () {
     cols=$(head -n1 $file)
     ncols=$(echo $cols | sed "s/[^$delim]//g" | wc -c)
     echo "Table $(basename $file) has $ncols colunms and $lines lines"
-    echo "checking consistency ..."
+    echo "checking consistency in file $file ..."
     echo "" > $path/data_$(basename $file)    #create or overwrite to empty File
     linenum=1
     while read line; do                       #process file linie by line
@@ -104,11 +105,6 @@ function fix_cols () {
         fi
       done
       diff=$(( ncols-ndelim-1 ))              #deviant number of columns to headline
-      if [[ $diff -ne  0 ]];then
-        echo "Line $linenum column difference: $diff - column number missmatchm ... fixing!"
-      else
-        echo "Line $linenum column difference: $diff - OK"
-      fi
       while [ $diff -gt 0 ]; do               #append deviant columns
         line=$line$delim
         ((diff--))
@@ -119,6 +115,7 @@ function fix_cols () {
       ((linenum++))
     done <$file
   done
+echo "fixing of column number integrity finished."
 }
 
 function pg_import () {
