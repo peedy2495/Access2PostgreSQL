@@ -5,6 +5,7 @@
 delim=';'                                   #define column-delimiter within .csv-files, here
 
 function conv_chars () {
+  rm -f $path/mod_*.csv                     #cleanup old files
   pattern="$path/*.csv"                     #search pattern for .csv-files
   for file in $pattern; do                  #process every .csv file in given path
     modfile="$path/mod_$(basename $file)"   #append "mod_" to filename
@@ -32,7 +33,7 @@ function gen_sql () {
     filename=$(basename $file)
     tablename="${filename%.csv}"
     cols=$(head -n1 $file)                  #determine number of cloumns ...
-    ncols=$(echo $cols | sed "s/[^$delim]//g" | wc -c)
+    ncols=$(echo $cols | gawk -vFPAT="[^$delim]*|\"[^\"]*\"" '{print NF}')
     echo "Table $(basename $file) has $ncols colunms"
     echo -n "Schema name: "
     read schema
@@ -79,32 +80,21 @@ function gen_sql () {
 }
 
 function fix_cols () {
+  rm -f $path/data_*.csv                      #cleanup old files
   echo "fixing column number missmatches:"
   pattern="$path/mod_*.csv"                   #search pattern for translated files (utf-8)
   line="1"
   for file in $pattern; do                    #process every mod_*.csv file in given path
     lines=$(wc -l $file|awk -F ' ' '{print $1}')
     cols=$(head -n1 $file)
-    ncols=$(echo $cols | sed "s/[^$delim]//g" | wc -c)
+    ncols=$(echo $cols | gawk -vFPAT="[^$delim]*|\"[^\"]*\"" '{print NF}')
     echo "Table $(basename $file) has $ncols colunms and $lines lines"
     echo "checking consistency in file $file ..."
-    echo "" > $path/data_$(basename $file)    #create or overwrite to empty File
+    echo -n "" > $path/data_$(basename $file) #create or overwrite to empty File
     linenum=1
-    while read line; do                       #process file linie by line
-      inquote="false"                         #flag for skipping delimiter chars within string-quotes
-      ndelim=0
-      i=0                                     #counter for chars in line
-      while (( i++ < ${#line} )); do          #process line char by char
-        char=$(expr substr "$line" $i 1)
-        if [ "$char" = \" ] && [ "$inquote" = true ]; then
-          inquote="false"
-        elif [ "$char" = \" ] && [ "$inquote" = false ]; then
-          inquote="true"
-        elif [ "$char" = "$delim" ] && [ "$inquote" = false ]; then
-          ((ndelim++))
-        fi
-      done
-      diff=$(( ncols-ndelim-1 ))              #deviant number of columns to headline
+    while read line; do                       #counter for chars in line
+      lcols=$(echo $line | gawk -vFPAT="[^$delim]*|\"[^\"]*\"" '{print NF}')
+      diff=$(( ncols-lcols ))                 #deviant number of columns to headline
       while [ $diff -gt 0 ]; do               #append deviant columns
         line=$line$delim
         ((diff--))
